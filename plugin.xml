@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="com.vormer.cordova.sygicfleet"
+        version="1.1.0">
+
+    <name>SygicFleetEmbedded</name>
+    <description>Sygic Professional Navigation Fleet 3D Embedded 26.0.7 bridge for Cordova/OutSystems Android</description>
+    <license>UNLICENSED</license>
+
+    <js-module src="www/SygicFleet.js" name="SygicFleet">
+        <clobbers target="SygicFleet" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="SygicFleet">
+                <param name="android-package" value="com.vormer.sygicfleet.SygicFleetPlugin" />
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/SygicFleetPlugin.java" target-dir="src/com/vormer/sygicfleet" />
+
+        <!-- Local Sygic AAR, including resources and native libraries -->
+        <framework src="libs/embedded-with-res-26.0.7.aar" custom="true" type="gradleReference" />
+
+        <!-- Sygic 26.x classes in the AAR use AndroidX + Kotlin runtime -->
+        <framework src="androidx.appcompat:appcompat:1.7.0" />
+        <framework src="androidx.fragment:fragment:1.8.5" />
+        <framework src="androidx.core:core-ktx:1.15.0" />
+        <framework src="org.jetbrains.kotlin:kotlin-stdlib:2.0.21" />
+
+        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+        <uses-permission android:name="android.permission.INTERNET" />
+        <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    </platform>
+</plugin>
