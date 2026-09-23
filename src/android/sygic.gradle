@@ -1,3 +1,13 @@
+repositories {
+    maven {
+        url "https://public.repo.sygic.com/repository/maven-sygic-releases/"
+    }
+}
+
 dependencies {
-    implementation files("${project.projectDir}/libs/embedded-with-res-26.0.7-outsystems.aar")
+    implementation files(
+        "${project.projectDir}/libs/embedded-with-res-26.0.7-outsystems.aar"
+    )
+
+    implementation 'com.sygic.driving:driving-lib:1.2.8'
 }
