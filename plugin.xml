@@ -136,7 +136,7 @@
         <!-- Manifest                                         -->
         <!-- ================================================= -->
 
-        <edit-config
+<!--        <edit-config
             file="app/src/main/AndroidManifest.xml"
             mode="merge"
             target="/manifest/application">
@@ -145,7 +145,7 @@
                 xmlns:tools="http://schemas.android.com/tools"
                 tools:replace="android:icon,android:label" />
 
-        </edit-config>
+        </edit-config> -->
 
 
     </platform>
