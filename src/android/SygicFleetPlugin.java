@@ -150,28 +150,6 @@ public class SygicFleetPlugin extends CordovaPlugin implements IApiCallback {
         });
     }
 
-
-    @Override
-    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode != PERMISSION_REQUEST) return;
-        CallbackContext cb = pendingInitializeCallback;
-        pendingInitializeCallback = null;
-        if (cb == null) return;
-
-        boolean granted = true;
-        for (int result : grantResults) {
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                granted = false;
-                break;
-            }
-        }
-        if (granted) {
-            initializeAfterPermission(cb);
-        } else {
-            cb.error("Location permission is required by Sygic navigation");
-        }
-    }
-
     private void createFragment(final CallbackContext callbackContext) {
         final Activity activity = cordova.getActivity();
         activity.runOnUiThread(() -> {
