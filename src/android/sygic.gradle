@@ -1,9 +1,5 @@
-repositories {
-    flatDir {
-        dirs 'libs'
-    }
-}
-
 dependencies {
-    implementation(name: 'embedded-with-res-26.0.7', ext: 'aar')
+    implementation files(
+        "${project.projectDir}/libs/embedded-with-res-26.0.7.aar"
+    )
 }
