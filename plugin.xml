@@ -4,7 +4,7 @@
     xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="com.vormer.cordova.sygicfleet"
-    version="1.1.1">
+    version="1.2.0">
 
     <name>SygicFleetEmbedded</name>
 
@@ -15,6 +15,11 @@
 
     <license>UNLICENSED</license>
 
+
+    <!-- ===================================================== -->
+    <!-- JavaScript                                            -->
+    <!-- ===================================================== -->
+
     <js-module
         src="www/SygicFleet.js"
         name="SygicFleet">
@@ -23,7 +28,13 @@
 
     </js-module>
 
+
     <platform name="android">
+
+
+        <!-- ================================================= -->
+        <!-- Cordova plugin registration                       -->
+        <!-- ================================================= -->
 
         <config-file
             target="res/xml/config.xml"
@@ -40,7 +51,9 @@
         </config-file>
 
 
-        <!-- Java Cordova bridge -->
+        <!-- ================================================= -->
+        <!-- Java                                             -->
+        <!-- ================================================= -->
 
         <source-file
             src="src/android/SygicFleetPlugin.java"
@@ -49,14 +62,20 @@
         <source-file
             src="src/android/SygicFileProvider.java"
             target-dir="src/com/vormer/sygicfleet" />
-        
-        <!-- Sygic Embedded SDK -->
+
+
+        <!-- ================================================= -->
+        <!-- Sygic SDK                                        -->
+        <!-- ================================================= -->
+
         <source-file
-            src="libs/embedded-with-res-26.0.7.aar"
+            src="libs/embedded-with-res-26.0.7-outsystems.aar"
             target-dir="app/libs" />
 
 
-        <!-- Additional Gradle configuration -->
+        <!-- ================================================= -->
+        <!-- Gradle                                           -->
+        <!-- ================================================= -->
 
         <framework
             src="src/android/sygic.gradle"
@@ -64,46 +83,70 @@
             type="gradleReference" />
 
 
-        <!-- AndroidX / Kotlin dependencies -->
-
-        <!-- Sygic AndroidX dependencies -->
+        <!-- ================================================= -->
+        <!-- AndroidX                                         -->
+        <!-- ================================================= -->
 
         <framework src="androidx.appcompat:appcompat:1.7.0" />
         <framework src="androidx.fragment:fragment:1.8.5" />
         <framework src="androidx.activity:activity:1.9.3" />
-        <framework src="androidx.constraintlayout:constraintlayout:2.2.0" />
-        <framework src="androidx.preference:preference:1.2.1" />
 
-        <framework src="androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7" />
-        <framework src="androidx.lifecycle:lifecycle-livedata-ktx:2.8.7" />
+        <framework
+            src="androidx.constraintlayout:constraintlayout:2.2.0" />
 
-        <framework src="androidx.work:work-runtime-ktx:2.10.0" />
-        <framework src="androidx.multidex:multidex:2.0.1" />
+        <framework
+            src="androidx.preference:preference:1.2.1" />
 
-        <!-- Google Play Services -->
+        <framework
+            src="androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7" />
 
-        <framework src="com.google.android.gms:play-services-location:21.3.0" />
-        <framework src="com.google.android.gms:play-services-base:18.5.0" />
-        <framework src="com.google.android.gms:play-services-basement:18.5.0" />
+        <framework
+            src="androidx.lifecycle:lifecycle-livedata-ktx:2.8.7" />
 
-        <!-- Kotlin coroutines -->
+        <framework
+            src="androidx.work:work-runtime-ktx:2.10.0" />
 
-        <framework src="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1" />
+        <framework
+            src="androidx.multidex:multidex:2.0.1" />
 
 
-        <!-- Permissions -->
+        <!-- ================================================= -->
+        <!-- Google Play Services                             -->
+        <!-- ================================================= -->
 
-        <uses-permission
-            android:name="android.permission.ACCESS_FINE_LOCATION" />
+        <framework
+            src="com.google.android.gms:play-services-location:21.3.0" />
 
-        <uses-permission
-            android:name="android.permission.ACCESS_COARSE_LOCATION" />
+        <framework
+            src="com.google.android.gms:play-services-base:18.5.0" />
 
-        <uses-permission
-            android:name="android.permission.INTERNET" />
+        <framework
+            src="com.google.android.gms:play-services-basement:18.5.0" />
 
-        <uses-permission
-            android:name="android.permission.POST_NOTIFICATIONS" />
+
+        <!-- ================================================= -->
+        <!-- Coroutines                                       -->
+        <!-- ================================================= -->
+
+        <framework
+            src="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1" />
+
+
+        <!-- ================================================= -->
+        <!-- Manifest                                         -->
+        <!-- ================================================= -->
+
+        <edit-config
+            file="app/src/main/AndroidManifest.xml"
+            mode="merge"
+            target="/manifest/application">
+
+            <application
+                xmlns:tools="http://schemas.android.com/tools"
+                tools:replace="android:icon,android:label" />
+
+        </edit-config>
+
 
     </platform>
 
