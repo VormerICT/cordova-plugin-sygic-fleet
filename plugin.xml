@@ -20,9 +20,12 @@
         </config-file>
 
         <source-file src="src/android/SygicFleetPlugin.java" target-dir="src/com/vormer/sygicfleet" />
+        
+        <!-- Copy the AAR, DON'T treat it as a Gradle script -->
+        <source-file src="libs/embedded-with-res-26.0.7.aar" target-dir="app/libs" />
 
-        <!-- Local Sygic AAR, including resources and native libraries -->
-        <framework src="libs/embedded-with-res-26.0.7.aar" custom="true" type="gradleReference" />
+    <!-- This IS the Gradle script -->
+        <framework src="src/android/sygic.gradle" custom="true" type="gradleReference" />
 
         <!-- Sygic 26.x classes in the AAR use AndroidX + Kotlin runtime -->
         <framework src="androidx.appcompat:appcompat:1.7.0" />
