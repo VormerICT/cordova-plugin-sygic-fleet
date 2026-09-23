@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.util.Log;
 
 import com.sygic.aura.ResourceManager;
 import com.sygic.aura.embedded.IApiCallback;
@@ -36,6 +37,7 @@ public class SygicFleetPlugin extends CordovaPlugin implements IApiCallback {
     private static final int PERMISSION_REQUEST = 6207;
     private static final int SYGIC_TIMEOUT_MS = 5000;
     private static final String FRAGMENT_TAG = "SygicFleetEmbeddedFragment";
+    private static final String TAG = "SygicFleetPlugin";
 
     private final ExecutorService sygicExecutor = Executors.newSingleThreadExecutor();
 
@@ -164,9 +166,9 @@ public class SygicFleetPlugin extends CordovaPlugin implements IApiCallback {
                     container = new FrameLayout(activity);
                     container.setId(View.generateViewId());
                     container.setBackgroundColor(Color.BLACK);
-                    container.setVisibility(View.GONE);
+                    container.setVisibility(View.VISIBLE);
 
-                    FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(1, 1);
+                    FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(2, 2);
                     lp.leftMargin = 0;
                     lp.topMargin = 0;
                     root.addView(container, lp);
@@ -335,22 +337,30 @@ public class SygicFleetPlugin extends CordovaPlugin implements IApiCallback {
         callbackContext.success();
     }
 
-    @Override
-    public void onEvent(int event, String data) {
-        if (event == ApiEvents.EVENT_APP_STARTED) {
-            appStarted = true;
-        } else if (event == ApiEvents.EVENT_APP_EXIT) {
-            appStarted = false;
-        }
+@Override
+public void onEvent(int event, String data) {
 
-        sendEvent(event, data);
+    Log.i(TAG,
+            "Sygic onEvent: event=" + event +
+            ", name=" + eventName(event) +
+            ", data=" + data);
+
+    if (event == ApiEvents.EVENT_APP_STARTED) {
+        appStarted = true;
+        Log.i(TAG, "*** SYGIC APP STARTED ***");
+    } else if (event == ApiEvents.EVENT_APP_EXIT) {
+        appStarted = false;
     }
 
-    @Override
-    public void onServiceConnected() {
-        serviceConnected = true;
-        sendEvent(-1000, "SERVICE_CONNECTED");
-    }
+    sendEvent(event, data);
+}
+
+@Override
+public void onServiceConnected() {
+    Log.i(TAG, "Sygic service connected");
+    serviceConnected = true;
+    sendEvent(-1000, "SERVICE_CONNECTED");
+}
 
     @Override
     public void onServiceDisconnected() {
