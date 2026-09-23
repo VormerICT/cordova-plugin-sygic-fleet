@@ -46,9 +46,11 @@
             src="src/android/SygicFleetPlugin.java"
             target-dir="src/com/vormer/sygicfleet" />
 
-
+        <source-file
+            src="src/android/SygicFileProvider.java"
+            target-dir="src/com/vormer/sygicfleet" />
+        
         <!-- Sygic Embedded SDK -->
-
         <source-file
             src="libs/embedded-with-res-26.0.7.aar"
             target-dir="app/libs" />
