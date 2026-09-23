@@ -396,18 +396,45 @@ public class SygicFleetPlugin extends CordovaPlugin implements IApiCallback {
                 || cordova.hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
     }
 
-    @Override
-    public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
-        if (requestCode != PERMISSION_REQUEST) return;
+@Override
+public void onRequestPermissionResult(
+        int requestCode,
+        String[] permissions,
+        int[] grantResults) throws JSONException {
 
-        for (int result : grantResults) {
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                sendEvent(-1002, "LOCATION_PERMISSION_DENIED");
-                return;
-            }
-        }
-        sendEvent(-1003, "LOCATION_PERMISSION_GRANTED");
+    if (requestCode != PERMISSION_REQUEST) {
+        return;
     }
+
+    boolean granted = grantResults.length > 0;
+
+    for (int result : grantResults) {
+        if (result != PackageManager.PERMISSION_GRANTED) {
+            granted = false;
+            break;
+        }
+    }
+
+    if (!granted) {
+        sendEvent(-1002, "LOCATION_PERMISSION_DENIED");
+
+        if (pendingInitializeCallback != null) {
+            pendingInitializeCallback.error("Location permission was denied");
+            pendingInitializeCallback = null;
+        }
+
+        return;
+    }
+
+    sendEvent(-1003, "LOCATION_PERMISSION_GRANTED");
+
+    if (pendingInitializeCallback != null) {
+        CallbackContext callback = pendingInitializeCallback;
+        pendingInitializeCallback = null;
+
+        initializeAfterPermission(callback);
+    }
+}
 
     @Override
     public void onDestroy() {
