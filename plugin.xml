@@ -12,30 +12,50 @@
         <clobbers target="SygicFleet" />
     </js-module>
 
-    <platform name="android">
-        <config-file target="res/xml/config.xml" parent="/*">
-            <feature name="SygicFleet">
-                <param name="android-package" value="com.vormer.sygicfleet.SygicFleetPlugin" />
-            </feature>
-        </config-file>
+<platform name="android">
 
-        <source-file src="src/android/SygicFleetPlugin.java" target-dir="src/com/vormer/sygicfleet" />
-        
-        <!-- Copy the AAR, DON'T treat it as a Gradle script -->
-        <source-file src="libs/embedded-with-res-26.0.7.aar" target-dir="app/libs" />
+    <config-file target="res/xml/config.xml" parent="/*">
+        <feature name="SygicFleet">
+            <param
+                name="android-package"
+                value="com.vormer.sygicfleet.SygicFleetPlugin" />
+        </feature>
+    </config-file>
 
-    <!-- This IS the Gradle script -->
-        <framework src="src/android/sygic.gradle" custom="true" type="gradleReference" />
+    <!-- Cordova Java bridge -->
+    <source-file
+        src="src/android/SygicFleetPlugin.java"
+        target-dir="app/src/main/java/com/vormer/sygicfleet" />
 
-        <!-- Sygic 26.x classes in the AAR use AndroidX + Kotlin runtime -->
-        <framework src="androidx.appcompat:appcompat:1.7.0" />
-        <framework src="androidx.fragment:fragment:1.8.5" />
-        <framework src="androidx.core:core-ktx:1.15.0" />
-        <framework src="org.jetbrains.kotlin:kotlin-stdlib:2.0.21" />
+    <!-- Sygic AAR -->
+    <source-file
+        src="libs/embedded-with-res-26.0.7.aar"
+        target-dir="app/libs" />
 
-        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-        <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-        <uses-permission android:name="android.permission.INTERNET" />
-        <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    </platform>
+    <!-- Gradle configuration -->
+    <framework
+        src="src/android/sygic.gradle"
+        custom="true"
+        type="gradleReference" />
+
+    <!-- Dependencies required by Sygic -->
+    <framework src="androidx.appcompat:appcompat:1.7.0" />
+    <framework src="androidx.fragment:fragment:1.8.5" />
+    <framework src="androidx.core:core-ktx:1.15.0" />
+    <framework src="org.jetbrains.kotlin:kotlin-stdlib:2.0.21" />
+
+    <!-- Permissions -->
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <uses-permission
+        android:name="android.permission.INTERNET" />
+
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS" />
+
+</platform>
 </plugin>
