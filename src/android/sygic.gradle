@@ -1,5 +1,3 @@
 dependencies {
-    implementation files(
-        "${project.projectDir}/libs/embedded-with-res-26.0.7.aar"
-    )
+    implementation files("${project.projectDir}/libs/embedded-with-res-26.0.7-outsystems.aar")
 }
