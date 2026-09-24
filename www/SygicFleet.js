@@ -12,7 +12,15 @@ var SygicFleet = {
         if (!el) { if (error) error('Element not found: ' + elementOrId); return; }
         var r = el.getBoundingClientRect();
         var scale = window.devicePixelRatio || 1;
-        this.show(Math.round(r.left * scale), Math.round(r.top * scale), Math.round(r.width * scale), Math.round(r.height * scale), success, error);
+        var left = Math.round(r.left * scale);
+        var top = Math.round(r.top * scale);
+        var width = Math.round(r.width * scale);
+        var height = Math.round(r.height * scale);
+        if (width < 32 || height < 32) {
+            if (error) error('Sygic target element is too small or not laid out yet: ' + width + 'x' + height + ' px');
+            return;
+        }
+        this.show(left, top, width, height, success, error);
     },
     hide: function (success, error) { call('hide', [], success, error); },
     navigateToAddress: function (address, success, error) { call('navigateToAddress', [address], success, error); },
