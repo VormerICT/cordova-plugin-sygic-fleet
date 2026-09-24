@@ -63,6 +63,9 @@
             src="src/android/SygicFileProvider.java"
             target-dir="src/com/vormer/sygicfleet" />
 
+        <source-file
+            src="src/android/SygicFleetFragment.java"
+            target-dir="src/com/vormer/sygicfleet" />
 
         <!-- ================================================= -->
         <!-- Sygic SDK                                        -->
