@@ -1,14 +1,18 @@
 package com.vormer.sygicfleet;
 
+import android.util.Log;
+
+import com.sygic.aura.embedded.IApiCallback;
 import com.sygic.aura.embedded.SygicFragment;
 
 public class SygicFleetFragment extends SygicFragment {
-
-    private IApiCallbackProvider callbackProvider;
+    private static final String TAG = "SygicFleetFragment";
 
     public interface IApiCallbackProvider {
-        com.sygic.aura.embedded.IApiCallback getSygicCallback();
+        IApiCallback getSygicCallback();
     }
+
+    private IApiCallbackProvider callbackProvider;
 
     public void setCallbackProvider(IApiCallbackProvider provider) {
         this.callbackProvider = provider;
@@ -16,12 +20,14 @@ public class SygicFleetFragment extends SygicFragment {
 
     @Override
     public void onResume() {
+        Log.i(TAG, "onResume(): calling startNavi()");
         startNavi();
-
         if (callbackProvider != null) {
+            Log.i(TAG, "onResume(): installing IApiCallback");
             setCallback(callbackProvider.getSygicCallback());
+        } else {
+            Log.w(TAG, "onResume(): callbackProvider is null");
         }
-
         super.onResume();
     }
 }
