@@ -42,7 +42,8 @@ public class SygicFleetPlugin extends CordovaPlugin implements IApiCallback {
     private final ExecutorService sygicExecutor = Executors.newSingleThreadExecutor();
 
     private FrameLayout container;
-    private SygicFragment sygicFragment;
+    //private SygicFragment sygicFragment;
+    private SygicFleetFragment sygicFragment;
     private CallbackContext eventCallback;
 
     private volatile boolean appStarted = false;
@@ -178,19 +179,27 @@ public class SygicFleetPlugin extends CordovaPlugin implements IApiCallback {
                 FragmentManager fm = activity.getFragmentManager();
                 android.app.Fragment existing = fm.findFragmentByTag(FRAGMENT_TAG);
 
-                if (existing instanceof SygicFragment) {
-                    sygicFragment = (SygicFragment) existing;
-                } else {
-                    sygicFragment = new SygicFragment();
-                    FragmentTransaction tx = fm.beginTransaction();
-                    tx.replace(container.getId(), sygicFragment, FRAGMENT_TAG);
-                    tx.commitAllowingStateLoss();
-                    fm.executePendingTransactions();
-                }
+if (existing instanceof SygicFleetFragment) {
 
-                sygicFragment.setCallback(this);
-                sygicFragment.setAutoShutdownNavigation(false);
-                sygicFragment.startNavi();
+    sygicFragment = (SygicFleetFragment) existing;
+
+} else {
+
+    sygicFragment = new SygicFleetFragment();
+
+    FragmentTransaction tx = fm.beginTransaction();
+
+    tx.replace(
+        container.getId(),
+        sygicFragment,
+        FRAGMENT_TAG
+    );
+
+    tx.commitAllowingStateLoss();
+}
+
+sygicFragment.setCallbackProvider(() -> this);
+sygicFragment.setAutoShutdownNavigation(false);
 
                 initialized = true;
                 callbackContext.success(statusJson("initializing_sygic"));
