@@ -279,8 +279,11 @@ public class SygicFleetPlugin extends CordovaPlugin
                     container.setBackgroundColor(Color.BLACK);
                     container.setVisibility(View.VISIBLE);
 
-                    FrameLayout.LayoutParams lp =
-                            new FrameLayout.LayoutParams(10, 10);
+                        FrameLayout.LayoutParams lp =
+                                new FrameLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT
+                        );
 
                     lp.leftMargin = 0;
                     lp.topMargin = 0;
