@@ -647,6 +647,51 @@ public class SygicFleetPlugin extends CordovaPlugin
                 -1000,
                 "SERVICE_CONNECTED"
         );
+
+        /*
+         * On a cold restart of an already initialized Sygic installation,
+         * EVENT_APP_STARTED is not always delivered again. Do not assume that
+         * SERVICE_CONNECTED alone means the API is ready. Instead, verify
+         * readiness with a harmless API call.
+         *
+         * If the probe succeeds and EVENT_APP_STARTED has not already arrived,
+         * mark the bridge ready and emit the same normalized ready event to JS.
+         */
+        sygicExecutor.submit(() -> {
+            try {
+                Log.i(TAG, "*** Probing Sygic API readiness after SERVICE_CONNECTED ***");
+
+                String deviceId = Api.getUniqueDeviceId(SYGIC_TIMEOUT_MS);
+
+                Log.i(TAG,
+                        "*** Sygic API readiness probe succeeded. deviceId="
+                                + deviceId
+                                + " ***");
+
+                if (!appStarted) {
+                    appStarted = true;
+
+                    Log.i(TAG,
+                            "*** EVENT_APP_STARTED was not received; "
+                                    + "API probe proves Sygic is ready. "
+                                    + "Sending normalized EVENT_APP_STARTED ***");
+
+                    sendEvent(
+                            ApiEvents.EVENT_APP_STARTED,
+                            null
+                    );
+                } else {
+                    Log.i(TAG,
+                            "*** Sygic already ready; no normalized event needed ***");
+                }
+
+            } catch (Exception e) {
+                Log.w(TAG,
+                        "*** Sygic API readiness probe failed after SERVICE_CONNECTED. "
+                                + "Waiting for real EVENT_APP_STARTED. ***",
+                        e);
+            }
+        });
     }
 
     @Override
