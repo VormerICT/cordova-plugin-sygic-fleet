@@ -18,18 +18,28 @@ public class SygicFleetFragment extends SygicFragment {
         this.callbackProvider = provider;
     }
 
-    @Override
-    public void onResume() {
-        Log.i(TAG, "onResume(): calling startNavi()");
-        startNavi();
-        if (callbackProvider != null) {
-            Log.i(TAG, "onResume(): installing IApiCallback");
-            setCallback(callbackProvider.getSygicCallback());
-        } else {
-            Log.w(TAG, "onResume(): callbackProvider is null");
-        }
-        super.onResume();
+@Override
+public void onResume() {
+    Log.i(TAG, "*** onResume() ***");
+
+    Log.i(TAG, "*** enabling auto shutdown ***");
+    setAutoShutdownNavigation(true);
+
+    Log.i(TAG, "*** calling startNavi() ***");
+    startNavi();
+
+    if (callbackProvider != null) {
+        Log.i(TAG, "*** installing Sygic callback ***");
+        setCallback(callbackProvider.getSygicCallback());
+    } else {
+        Log.e(TAG, "*** callbackProvider IS NULL ***");
     }
+
+    Log.i(TAG, "*** calling super.onResume() ***");
+    super.onResume();
+
+    Log.i(TAG, "*** onResume() finished ***");
+}
 
 
     @Override
