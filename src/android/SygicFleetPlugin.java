@@ -576,28 +576,24 @@ public class SygicFleetPlugin extends CordovaPlugin
     }
 
     private void registerEventListener(CallbackContext callbackContext) {
-        Log.i(TAG, "Registering Cordova event listener");
+    eventCallback = callbackContext;
 
-        eventCallback = callbackContext;
+    // Keep the Cordova callback alive for future Sygic events.
+    PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+    result.setKeepCallback(true);
+    callbackContext.sendPluginResult(result);
 
-        PluginResult result =
-                new PluginResult(PluginResult.Status.NO_RESULT);
-
-        result.setKeepCallback(true);
-        callbackContext.sendPluginResult(result);
-
-        if (appStarted) {
-            sendEvent(
-                    ApiEvents.EVENT_APP_STARTED,
-                    "ALREADY_STARTED"
-            );
-        } else if (serviceConnected) {
-            sendEvent(
-                    -1000,
-                    "SERVICE_ALREADY_CONNECTED"
-            );
-        }
+    // A new JS/OutSystems listener may be registered after Sygic has
+    // already emitted EVENT_APP_STARTED. Replay the current state so
+    // every new listener receives the ready event.
+    if (appStarted) {
+        Log.i(TAG, "Event listener registered while Sygic is already ready; replaying EVENT_APP_STARTED");
+        sendEvent(ApiEvents.EVENT_APP_STARTED, null);
+    } else if (serviceConnected) {
+        Log.i(TAG, "Event listener registered while Sygic service is already connected; replaying SERVICE_CONNECTED");
+        sendEvent(-1000, "SERVICE_CONNECTED");
     }
+}
 
     private void removeEventListener(CallbackContext callbackContext) {
         if (eventCallback != null) {
