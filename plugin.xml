@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="com.vormer.cordova.sygicfleet"
-        version="1.3.0">
+        version="1.4.1">
 
     <name>SygicFleetEmbedded</name>
     <description>Sygic Professional Navigation Fleet 3D Embedded 26.0.7 bridge for Cordova/OutSystems Android</description>

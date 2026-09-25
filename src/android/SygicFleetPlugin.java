@@ -75,6 +75,9 @@ public class SygicFleetPlugin extends CordovaPlugin
             case "hide":
                 hide(callbackContext);
                 return true;
+            case "updatePosition":
+                updatePosition(args, callbackContext);
+                return true;
             case "navigateToAddress":
                 navigateToAddress(args.getString(0), callbackContext);
                 return true;
@@ -381,6 +384,40 @@ public class SygicFleetPlugin extends CordovaPlugin
             container.bringToFront();
 
             Log.i(TAG, "Showing Sygic: " + left + "," + top + " " + width + "x" + height);
+            callbackContext.success();
+        });
+    }
+
+
+    private void updatePosition(JSONArray args, CallbackContext callbackContext)
+            throws JSONException {
+
+        final int left = args.getInt(0);
+        final int top = args.getInt(1);
+        final int width = Math.max(1, args.getInt(2));
+        final int height = Math.max(1, args.getInt(3));
+
+        if (container == null || !initialized) {
+            callbackContext.success();
+            return;
+        }
+
+        cordova.getActivity().runOnUiThread(() -> {
+            if (width < 32 || height < 32) {
+                callbackContext.success();
+                return;
+            }
+
+            // left/top may legitimately be negative while the DOM element scrolls
+            // partly outside the WebView. The Activity root clips the native view.
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height);
+            lp.leftMargin = left;
+            lp.topMargin = top;
+            container.setLayoutParams(lp);
+
+            if (container.getVisibility() != View.VISIBLE) {
+                container.setVisibility(View.VISIBLE);
+            }
             callbackContext.success();
         });
     }
