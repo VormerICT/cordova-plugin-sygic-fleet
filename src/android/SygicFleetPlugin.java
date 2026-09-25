@@ -339,6 +339,10 @@ public class SygicFleetPlugin extends CordovaPlugin
                 Log.i(TAG, "Sygic fragment initialized at valid bounds; waiting for EVENT_APP_STARTED");
                 callbackContext.success(statusJson("initializing_sygic"));
 
+                // The Sygic engine may already be alive from a previous Activity launch.
+                // In that case EVENT_APP_STARTED may not be emitted again, so verify API readiness.
+                probeSygicReady();
+
             } catch (Exception e) {
                 Log.e(TAG, "Failed to initialize Sygic fragment", e);
                 callbackContext.error("Failed to initialize Sygic fragment: "
@@ -387,6 +391,9 @@ public class SygicFleetPlugin extends CordovaPlugin
 
             Log.i(TAG, "Showing Sygic: " + left + "," + top + " " + width + "x" + height);
             callbackContext.success();
+
+            // Also probe when an existing fragment/container is shown again.
+            probeSygicReady();
         });
     }
 
@@ -547,6 +554,45 @@ public class SygicFleetPlugin extends CordovaPlugin
                             ? JSONObject.NULL
                             : version.toString()
             );
+        });
+    }
+
+    private void probeSygicReady() {
+        if (appStarted) {
+            Log.i(TAG, "*** probeSygicReady: already ready ***");
+            return;
+        }
+
+        Log.i(TAG, "*** probeSygicReady: starting API probe ***");
+
+        sygicExecutor.execute(() -> {
+            try {
+                String deviceId = Api.getUniqueDeviceId(SYGIC_TIMEOUT_MS);
+
+                Log.i(TAG,
+                        "*** probeSygicReady SUCCESS: deviceId="
+                                + deviceId + " ***");
+
+                if (deviceId != null && !deviceId.isEmpty() && !appStarted) {
+                    // A successful real Sygic API call proves the engine is ready.
+                    appStarted = true;
+
+                    cordova.getActivity().runOnUiThread(() -> {
+                        Log.i(TAG,
+                                "*** Sygic already running - sending normalized EVENT_APP_STARTED ***");
+
+                        sendEvent(
+                                ApiEvents.EVENT_APP_STARTED,
+                                null
+                        );
+                    });
+                }
+
+            } catch (Exception e) {
+                Log.i(TAG,
+                        "*** probeSygicReady: API not ready yet: "
+                                + e.getMessage() + " ***");
+            }
         });
     }
 
