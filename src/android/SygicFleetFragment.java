@@ -30,4 +30,35 @@ public class SygicFleetFragment extends SygicFragment {
         }
         super.onResume();
     }
+
+
+    @Override
+public void onPause() {
+    Log.i(TAG, "*** onPause() ***");
+    super.onPause();
+}
+
+@Override
+public void onStop() {
+    Log.i(TAG, "*** onStop() ***");
+    super.onStop();
+}
+
+@Override
+public void onDestroyView() {
+    Log.i(TAG, "*** onDestroyView() ***");
+    super.onDestroyView();
+}
+
+@Override
+public void onDestroy() {
+    Log.i(TAG, "*** onDestroy() ***");
+    super.onDestroy();
+}
+
+@Override
+public void onDetach() {
+    Log.i(TAG, "*** onDetach() ***");
+    super.onDetach();
+}
 }
