@@ -54,8 +54,6 @@ public class SygicFleetPlugin extends CordovaPlugin
     private volatile boolean serviceConnected = false;
     private volatile boolean initialized = false;
     private volatile boolean resourcesPrepared = false;
-    private static final int READY_PROBE_DELAY_MS = 250;
-    private static final int READY_PROBE_MAX_ATTEMPTS = 40;
 
     @Override
     protected void pluginInitialize() {
@@ -641,7 +639,7 @@ public class SygicFleetPlugin extends CordovaPlugin
         sendEvent(event, data);
     }
 
-   @Override
+@Override
 public void onServiceConnected() {
     Log.i(TAG, "*** SYGIC SERVICE CONNECTED ***");
 
@@ -651,13 +649,6 @@ public void onServiceConnected() {
             -1000,
             "SERVICE_CONNECTED"
     );
-
-    // EVENT_APP_STARTED is not always emitted when Sygic is started
-    // again while its engine is already initialized.
-    //
-    // Do NOT call the API immediately here. Sygic reports the service
-    // connected slightly before the API is actually usable.
-    startSygicReadyProbe();
 }
 
     @Override
@@ -793,118 +784,9 @@ public void onServiceConnected() {
         super.onDestroy();
     }
 
-                private void markSygicReadyFromProbe() {
+               
 
-    // A real EVENT_APP_STARTED could have arrived between the
-    // successful API call and this method.
-    if (appStarted) {
-        return;
-    }
-
-    appStarted = true;
-
-    Log.i(TAG,
-            "*** Sygic API confirmed ready - "
-                    + "sending normalized EVENT_APP_STARTED ***");
-
-    cordova.getActivity().runOnUiThread(() -> {
-
-        if (eventCallback != null) {
-            sendEvent(
-                    ApiEvents.EVENT_APP_STARTED,
-                    null
-            );
-        } else {
-            Log.w(TAG,
-                    "*** Sygic ready but no event listener "
-                            + "is currently registered ***");
-        }
-    });
-}
-
-
-private void startSygicReadyProbe() {
-    Log.i(TAG, "*** Starting delayed Sygic readiness probe ***");
-
-    sygicExecutor.submit(() -> {
-
-        for (int attempt = 1;
-             attempt <= READY_PROBE_MAX_ATTEMPTS;
-             attempt++) {
-
-            // Real EVENT_APP_STARTED may have arrived meanwhile.
-            if (appStarted) {
-                Log.i(TAG,
-                        "*** Readiness probe stopped: "
-                                + "Sygic is already ready ***");
-                return;
-            }
-
-            // Service disappeared while waiting.
-            if (!serviceConnected) {
-                Log.i(TAG,
-                        "*** Readiness probe stopped: "
-                                + "service disconnected ***");
-                return;
-            }
-
-            try {
-                Thread.sleep(READY_PROBE_DELAY_MS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-
-            // Check again after sleeping.
-            if (appStarted || !serviceConnected) {
-                return;
-            }
-
-            try {
-                Log.i(TAG,
-                        "*** Sygic readiness probe attempt "
-                                + attempt
-                                + "/"
-                                + READY_PROBE_MAX_ATTEMPTS
-                                + " ***");
-
-                String deviceId =
-                        Api.getUniqueDeviceId(SYGIC_TIMEOUT_MS);
-
-                if (deviceId != null && !deviceId.isEmpty()) {
-
-                    Log.i(TAG,
-                            "*** Sygic readiness probe SUCCESS: "
-                                    + deviceId
-                                    + " ***");
-
-                    markSygicReadyFromProbe();
-
-                    return;
-                }
-
-            } catch (Throwable e) {
-
-                // Throwable is intentional here:
-                // during Sygic startup the native API may not yet
-                // be completely available.
-                Log.i(TAG,
-                        "*** Sygic readiness probe attempt "
-                                + attempt
-                                + " not ready yet: "
-                                + e.getClass().getSimpleName()
-                                + " - "
-                                + e.getMessage()
-                                + " ***");
-            }
-        }
-
-        Log.w(TAG,
-                "*** Sygic readiness probe timed out after "
-                        + READY_PROBE_MAX_ATTEMPTS
-                        + " attempts ***");
-    });
-}                
+            
     private JSONObject statusJson(String state) {
         JSONObject result = new JSONObject();
 
