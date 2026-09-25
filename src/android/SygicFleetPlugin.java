@@ -53,6 +53,7 @@ public class SygicFleetPlugin extends CordovaPlugin
     private volatile boolean appStarted = false;
     private volatile boolean serviceConnected = false;
     private volatile boolean initialized = false;
+    private volatile boolean resourcesPrepared = false;
 
     @Override
     protected void pluginInitialize() {
@@ -73,6 +74,9 @@ public class SygicFleetPlugin extends CordovaPlugin
                 return true;
             case "hide":
                 hide(callbackContext);
+                return true;
+            case "updatePosition":
+                updatePosition(args, callbackContext);
                 return true;
             case "navigateToAddress":
                 navigateToAddress(args.getString(0), callbackContext);
@@ -121,9 +125,9 @@ public class SygicFleetPlugin extends CordovaPlugin
             try {
                 Log.i(TAG, "initialize()");
 
-                if (initialized) {
-                    Log.i(TAG, "Sygic already initialized. ready=" + appStarted);
-                    callbackContext.success(statusJson("already_initialized"));
+                if (resourcesPrepared) {
+                    Log.i(TAG, "Sygic resources already prepared. fragmentCreated=" + initialized + ", ready=" + appStarted);
+                    callbackContext.success(statusJson(initialized ? "already_initialized" : "resources_ready"));
                     return;
                 }
 
@@ -226,7 +230,8 @@ public class SygicFleetPlugin extends CordovaPlugin
                         @Override
                         public void onSuccess() {
                             Log.i(TAG, "Sygic resources updated");
-                            createFragment(callbackContext);
+                            resourcesPrepared = true;
+                            callbackContext.success(statusJson("resources_ready"));
                         }
 
                         @Override
@@ -244,7 +249,8 @@ public class SygicFleetPlugin extends CordovaPlugin
                     });
                 } else {
                     Log.i(TAG, "Sygic resources already current");
-                    createFragment(callbackContext);
+                    resourcesPrepared = true;
+                    callbackContext.success(statusJson("resources_ready"));
                 }
 
             } catch (Exception e) {
@@ -259,15 +265,32 @@ public class SygicFleetPlugin extends CordovaPlugin
         });
     }
 
-    private void createFragment(final CallbackContext callbackContext) {
+    private void createFragmentAtBounds(
+            final int left,
+            final int top,
+            final int width,
+            final int height,
+            final CallbackContext callbackContext) {
+
         final Activity activity = cordova.getActivity();
 
         activity.runOnUiThread(() -> {
             try {
-                Log.i(TAG, "Creating Sygic fragment");
+                if (!resourcesPrepared) {
+                    callbackContext.error("Sygic resources are not ready. Call Initialize first.");
+                    return;
+                }
+
+                if (width < 100 || height < 100) {
+                    callbackContext.error("Sygic element is too small to initialize safely: "
+                            + width + "x" + height + " px. Use at least 100x100 px.");
+                    return;
+                }
+
+                Log.i(TAG, "*** Creating Sygic fragment at " + left + "," + top
+                        + " " + width + "x" + height + " ***");
 
                 ViewGroup root = activity.findViewById(android.R.id.content);
-
                 if (root == null) {
                     callbackContext.error("Could not find Activity content view");
                     return;
@@ -277,65 +300,49 @@ public class SygicFleetPlugin extends CordovaPlugin
                     container = new FrameLayout(activity);
                     container.setId(View.generateViewId());
                     container.setBackgroundColor(Color.BLACK);
-                    container.setVisibility(View.VISIBLE);
 
-                    FrameLayout.LayoutParams lp =
-                            new FrameLayout.LayoutParams(10, 10);
-
-                    lp.leftMargin = 0;
-                    lp.topMargin = 0;
+                    FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height);
+                    lp.leftMargin = left;
+                    lp.topMargin = top;
 
                     root.addView(container, lp);
+                    container.setVisibility(View.VISIBLE);
                     container.bringToFront();
-
                     Log.i(TAG, "Sygic container created. id=" + container.getId());
+                } else {
+                    FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height);
+                    lp.leftMargin = left;
+                    lp.topMargin = top;
+                    container.setLayoutParams(lp);
+                    container.setVisibility(View.VISIBLE);
+                    container.bringToFront();
                 }
 
                 FragmentManager fm = activity.getFragmentManager();
-
-                android.app.Fragment existing =
-                        fm.findFragmentByTag(FRAGMENT_TAG);
+                android.app.Fragment existing = fm.findFragmentByTag(FRAGMENT_TAG);
 
                 if (existing instanceof SygicFleetFragment) {
                     Log.i(TAG, "Reusing existing Sygic fragment");
                     sygicFragment = (SygicFleetFragment) existing;
                 } else {
                     Log.i(TAG, "Creating new SygicFleetFragment");
-
                     sygicFragment = new SygicFleetFragment();
-
                     FragmentTransaction tx = fm.beginTransaction();
-
-                    tx.replace(
-                            container.getId(),
-                            sygicFragment,
-                            FRAGMENT_TAG
-                    );
-
+                    tx.replace(container.getId(), sygicFragment, FRAGMENT_TAG);
                     tx.commitAllowingStateLoss();
                 }
 
                 sygicFragment.setCallbackProvider(this);
                 sygicFragment.setAutoShutdownNavigation(false);
-
                 initialized = true;
 
-                Log.i(
-                        TAG,
-                        "Sygic fragment initialized; waiting for EVENT_APP_STARTED"
-                );
-
+                Log.i(TAG, "Sygic fragment initialized at valid bounds; waiting for EVENT_APP_STARTED");
                 callbackContext.success(statusJson("initializing_sygic"));
 
             } catch (Exception e) {
                 Log.e(TAG, "Failed to initialize Sygic fragment", e);
-
-                callbackContext.error(
-                        "Failed to initialize Sygic fragment: "
-                                + e.getClass().getSimpleName()
-                                + ": "
-                                + e.getMessage()
-                );
+                callbackContext.error("Failed to initialize Sygic fragment: "
+                        + e.getClass().getSimpleName() + ": " + e.getMessage());
             }
         });
     }
@@ -348,36 +355,71 @@ public class SygicFleetPlugin extends CordovaPlugin
     private void show(JSONArray args, CallbackContext callbackContext)
             throws JSONException {
 
+        Log.i(TAG, "*** ShowForElement called ***");
+
         final int left = Math.max(0, args.getInt(0));
         final int top = Math.max(0, args.getInt(1));
-        final int width = Math.max(1, args.getInt(2));
-        final int height = Math.max(1, args.getInt(3));
+        final int width = args.getInt(2);
+        final int height = args.getInt(3);
+
+        if (!resourcesPrepared) {
+            callbackContext.error("Sygic resources are not ready. Call Initialize first.");
+            return;
+        }
+
+        if (!initialized || container == null || sygicFragment == null) {
+            createFragmentAtBounds(left, top, width, height, callbackContext);
+            return;
+        }
 
         cordova.getActivity().runOnUiThread(() -> {
-            if (container == null) {
-                callbackContext.error("Sygic is not initialized");
+            if (width < 100 || height < 100) {
+                callbackContext.error("Sygic element is too small: " + width + "x" + height + " px");
                 return;
             }
 
-            FrameLayout.LayoutParams lp =
-                    new FrameLayout.LayoutParams(width, height);
-
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height);
             lp.leftMargin = left;
             lp.topMargin = top;
-
             container.setLayoutParams(lp);
             container.setVisibility(View.VISIBLE);
             container.bringToFront();
 
-            Log.i(
-                    TAG,
-                    "Showing Sygic: "
-                            + left + ","
-                            + top + " "
-                            + width + "x"
-                            + height
-            );
+            Log.i(TAG, "Showing Sygic: " + left + "," + top + " " + width + "x" + height);
+            callbackContext.success();
+        });
+    }
 
+
+    private void updatePosition(JSONArray args, CallbackContext callbackContext)
+            throws JSONException {
+
+        final int left = args.getInt(0);
+        final int top = args.getInt(1);
+        final int width = args.getInt(2);
+        final int height = args.getInt(3);
+
+        if (container == null || !initialized) {
+            callbackContext.success();
+            return;
+        }
+
+        cordova.getActivity().runOnUiThread(() -> {
+            if (width < 100 || height < 100) {
+                callbackContext.success();
+                return;
+            }
+
+            // left/top may legitimately be negative while the DOM element scrolls
+            // partly outside the WebView. The Activity root clips the native view.
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height);
+            lp.leftMargin = left;
+            lp.topMargin = top;
+            container.setLayoutParams(lp);
+
+            if (container.getVisibility() != View.VISIBLE) {
+                container.setVisibility(View.VISIBLE);
+            }
             callbackContext.success();
         });
     }
@@ -385,13 +427,11 @@ public class SygicFleetPlugin extends CordovaPlugin
     private void hide(CallbackContext callbackContext) {
         cordova.getActivity().runOnUiThread(() -> {
             if (container != null) {
-                FrameLayout.LayoutParams lp =
-                        new FrameLayout.LayoutParams(1, 1);
-
-                container.setLayoutParams(lp);
-                container.setVisibility(View.VISIBLE);
+                // Keep the last valid dimensions. Resizing Aura to 1x1/10x10 can crash
+                // its native font/resource sizing path (CResources::ResetSize).
+                container.setVisibility(View.INVISIBLE);
+                Log.i(TAG, "Sygic container hidden; valid dimensions preserved");
             }
-
             callbackContext.success();
         });
     }
