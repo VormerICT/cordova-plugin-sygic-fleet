@@ -463,7 +463,13 @@ public class SygicFleetPlugin extends CordovaPlugin
         runSygicApi(callbackContext, () -> {
             int lon = (int) Math.round(longitude * 100000.0d);
             int lat = (int) Math.round(latitude * 100000.0d);
-
+        Log.i(TAG,
+                "*** NavigateToCoordinates ***"
+                + " latitude=" + latitude
+                + " longitude=" + longitude
+                + " sygicLat=" + lat
+                + " sygicLon=" + lon
+        );
             WayPoint destination =
                     new WayPoint(name, lon, lat);
 
