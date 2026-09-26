@@ -51,6 +51,19 @@ public class SygicFleetPlugin extends CordovaPlugin
     private CallbackContext pendingInitializeCallback;
 
     private volatile boolean appStarted = false;
+
+    /*
+     * Process-wide Sygic engine state. The Cordova plugin/Fragment can be
+     * destroyed and recreated while the native Sygic navigation engine keeps
+     * running (autoShutdownNavigation=false). In that case Sygic does NOT emit
+     * EVENT_APP_STARTED a second time.
+     *
+     * This flag deliberately survives a SygicFleetPlugin instance recreation.
+     * It is set only by the real EVENT_APP_STARTED and cleared only by the real
+     * EVENT_APP_EXIT. If Android kills the process, the static state disappears
+     * together with the native engine, which is exactly what we want.
+     */
+    private static volatile boolean navigationEngineStartedInProcess = false;
     private volatile boolean serviceConnected = false;
     private volatile boolean initialized = false;
     private volatile boolean resourcesPrepared = false;
@@ -339,7 +352,6 @@ public class SygicFleetPlugin extends CordovaPlugin
                 Log.i(TAG, "Sygic fragment initialized at valid bounds; waiting for EVENT_APP_STARTED");
                 callbackContext.success(statusJson("initializing_sygic"));
 
-
             } catch (Exception e) {
                 Log.e(TAG, "Failed to initialize Sygic fragment", e);
                 callbackContext.error("Failed to initialize Sygic fragment: "
@@ -388,7 +400,6 @@ public class SygicFleetPlugin extends CordovaPlugin
 
             Log.i(TAG, "Showing Sygic: " + left + "," + top + " " + width + "x" + height);
             callbackContext.success();
-
         });
     }
 
@@ -463,13 +474,7 @@ public class SygicFleetPlugin extends CordovaPlugin
         runSygicApi(callbackContext, () -> {
             int lon = (int) Math.round(longitude * 100000.0d);
             int lat = (int) Math.round(latitude * 100000.0d);
-        Log.i(TAG,
-                "*** NavigateToCoordinates ***"
-                + " latitude=" + latitude
-                + " longitude=" + longitude
-                + " sygicLat=" + lat
-                + " sygicLon=" + lon
-        );
+
             WayPoint destination =
                     new WayPoint(name, lon, lat);
 
@@ -635,9 +640,11 @@ public class SygicFleetPlugin extends CordovaPlugin
         );
 
         if (event == ApiEvents.EVENT_APP_STARTED) {
+            navigationEngineStartedInProcess = true;
             appStarted = true;
             Log.i(TAG, "*** SYGIC EVENT_APP_STARTED ***");
         } else if (event == ApiEvents.EVENT_APP_EXIT) {
+            navigationEngineStartedInProcess = false;
             appStarted = false;
             Log.i(TAG, "*** SYGIC EVENT_APP_EXIT ***");
         }
@@ -645,17 +652,49 @@ public class SygicFleetPlugin extends CordovaPlugin
         sendEvent(event, data);
     }
 
-@Override
-public void onServiceConnected() {
-    Log.i(TAG, "*** SYGIC SERVICE CONNECTED ***");
+    @Override
+    public void onServiceConnected() {
+        Log.i(TAG, "*** SYGIC SERVICE CONNECTED ***");
 
-    serviceConnected = true;
+        serviceConnected = true;
 
-    sendEvent(
-            -1000,
-            "SERVICE_CONNECTED"
-    );
-}
+        sendEvent(
+                -1000,
+                "SERVICE_CONNECTED"
+        );
+
+        /*
+         * EVENT_APP_STARTED belongs to the native Sygic navigation-engine
+         * lifecycle, not to the Fragment lifecycle. If this plugin instance is
+         * recreated while the engine is still running, the new Fragment binds
+         * to the existing service but no second EVENT_APP_STARTED is generated.
+         *
+         * Do NOT call an API method here as a readiness probe. The previous
+         * getUniqueDeviceId() probe could enter JNI before the Java/native API
+         * bridge was valid and caused UnsatisfiedLinkError.
+         *
+         * Instead, use the process-wide state learned from the real Sygic
+         * lifecycle event. A process restart clears this static flag, so a true
+         * cold start still waits for the real EVENT_APP_STARTED.
+         */
+        if (navigationEngineStartedInProcess) {
+            appStarted = true;
+
+            Log.i(TAG,
+                    "*** Existing Sygic navigation engine detected; "
+                            + "restoring READY without waiting for another "
+                            + "EVENT_APP_STARTED ***");
+
+            sendEvent(
+                    ApiEvents.EVENT_APP_STARTED,
+                    "ALREADY_STARTED"
+            );
+        } else {
+            Log.i(TAG,
+                    "*** Sygic engine has not started in this process yet; "
+                            + "waiting for real EVENT_APP_STARTED ***");
+        }
+    }
 
     @Override
     public void onServiceDisconnected() {
@@ -790,9 +829,6 @@ public void onServiceConnected() {
         super.onDestroy();
     }
 
-               
-
-            
     private JSONObject statusJson(String state) {
         JSONObject result = new JSONObject();
 
