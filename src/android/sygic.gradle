@@ -9,3 +9,11 @@ android {
 dependencies {
     implementation files("${project.projectDir}/libs/embedded-with-res-26.0.7-outsystems.aar")
 }
+// Allow Kotlin 1.9 to read newer Kotlin metadata
+plugins.withId("org.jetbrains.kotlin.android") {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            freeCompilerArgs += ["-Xskip-metadata-version-check"]
+        }
+    }
+}
