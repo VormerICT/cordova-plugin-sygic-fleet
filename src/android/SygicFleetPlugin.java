@@ -365,35 +365,52 @@ public class SygicFleetPlugin extends CordovaPlugin
         return this;
     }
 
+    // Called on the UI thread. Both locations use native screen pixels.
+    private int[] webViewOffset(boolean webRelative) {
+        int[] offset = new int[2];
+        if (!webRelative) return offset;
+        View root = cordova.getActivity().findViewById(android.R.id.content);
+        View web = webView.getView();
+        if (root == null || web == null) return offset;
+        int[] rootLocation = new int[2];
+        root.getLocationOnScreen(rootLocation);
+        web.getLocationOnScreen(offset);
+        offset[0] -= rootLocation[0];
+        offset[1] -= rootLocation[1];
+        return offset;
+    }
+
     private void show(JSONArray args, CallbackContext callbackContext)
             throws JSONException {
 
         Log.i(TAG, "*** ShowForElement called ***");
 
-        final int left = Math.max(0, args.getInt(0));
-        final int top = Math.max(0, args.getInt(1));
+        final int left = args.getInt(0);
+        final int top = args.getInt(1);
         final int width = args.getInt(2);
         final int height = args.getInt(3);
+        final boolean webRelative = args.optBoolean(4, false);
 
         if (!resourcesPrepared) {
             callbackContext.error("Sygic resources are not ready. Call Initialize first.");
             return;
         }
 
+        cordova.getActivity().runOnUiThread(() -> {
+        int[] origin = webViewOffset(webRelative);
         if (!initialized || container == null || sygicFragment == null) {
-            createFragmentAtBounds(left, top, width, height, callbackContext);
+            createFragmentAtBounds((webRelative ? left : Math.max(0, left)) + origin[0], (webRelative ? top : Math.max(0, top)) + origin[1], width, height, callbackContext);
             return;
         }
 
-        cordova.getActivity().runOnUiThread(() -> {
             if (width < 100 || height < 100) {
                 callbackContext.error("Sygic element is too small: " + width + "x" + height + " px");
                 return;
             }
 
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height);
-            lp.leftMargin = left;
-            lp.topMargin = top;
+            lp.leftMargin = (webRelative ? left : Math.max(0, left)) + origin[0];
+            lp.topMargin = (webRelative ? top : Math.max(0, top)) + origin[1];
             container.setLayoutParams(lp);
             container.setVisibility(View.VISIBLE);
             container.bringToFront();
@@ -411,6 +428,7 @@ public class SygicFleetPlugin extends CordovaPlugin
         final int top = args.getInt(1);
         final int width = args.getInt(2);
         final int height = args.getInt(3);
+        final boolean webRelative = args.optBoolean(4, false);
 
         if (container == null || !initialized) {
             callbackContext.success();
@@ -423,11 +441,12 @@ public class SygicFleetPlugin extends CordovaPlugin
                 return;
             }
 
+            int[] origin = webViewOffset(webRelative);
             // left/top may legitimately be negative while the DOM element scrolls
             // partly outside the WebView. The Activity root clips the native view.
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(width, height);
-            lp.leftMargin = left;
-            lp.topMargin = top;
+            lp.leftMargin = left + origin[0];
+            lp.topMargin = top + origin[1];
             container.setLayoutParams(lp);
 
             if (container.getVisibility() != View.VISIBLE) {
